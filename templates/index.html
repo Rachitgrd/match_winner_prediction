@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>T20 Cricket Predictor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .progress-bar {
+            transition: width 0.5s ease-in-out;
+        }
+        /* Custom radio button styles */
+        .radio-label {
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        input[type="radio"]:checked + .radio-label {
+            background-color: #059669; /* emerald-600 */
+            border-color: #10B981; /* emerald-500 */
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white antialiased">
+
+    <!-- Main Container -->
+    <div class="container mx-auto p-4 md:p-8 max-w-4xl">
+
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-emerald-400">T20 Cricket Predictor</h1>
+            <p class="text-gray-400 mt-2">Live In-Game Win Probability & Score Projection</p>
+        </header>
+
+        <main>
+            <div class="bg-gray-800 rounded-lg p-6 shadow-lg">
+                <h2 class="text-xl font-semibold mb-6 text-emerald-300">Enter Match Details</h2>
+
+                <!-- Innings Selector -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Select Innings</label>
+                    <div class="flex rounded-md" role="radiogroup">
+                        <input type="radio" name="innings-option" id="innings-1" class="sr-only" value="1" checked onchange="toggleInningsView()">
+                        <label for="innings-1" class="radio-label flex-1 text-center py-2 px-4 border border-gray-600 rounded-l-md cursor-pointer">1st Innings</label>
+                        
+                        <input type="radio" name="innings-option" id="innings-2" class="sr-only" value="2" onchange="toggleInningsView()">
+                        <label for="innings-2" class="radio-label flex-1 text-center py-2 px-4 border-t border-b border-r border-gray-600 rounded-r-md cursor-pointer">2nd Innings</label>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Batting & Bowling Teams -->
+                    <div>
+                        <label for="batting-team" class="block text-sm font-medium text-gray-300">Batting Team</label>
+                        <select id="batting-team" class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"></select>
+                    </div>
+                    <div>
+                        <label for="bowling-team" class="block text-sm font-medium text-gray-300">Bowling Team</label>
+                        <select id="bowling-team" class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"></select>
+                    </div>
+                    <!-- Venue -->
+                    <div class="md:col-span-2">
+                        <label for="venue" class="block text-sm font-medium text-gray-300">Venue</label>
+                        <select id="venue" class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"></select>
+                    </div>
+                    
+                    <!-- Target Score (2nd Innings only) -->
+                    <div id="target-score-container" class="md:col-span-2 hidden">
+                        <label for="target" class="block text-sm font-medium text-gray-300">Target Score</label>
+                        <input type="number" id="target" class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm" placeholder="e.g., 178" min="1">
+                    </div>
+
+                    <!-- Match State -->
+                    <div>
+                        <label for="current-score" class="block text-sm font-medium text-gray-300">Current Score</label>
+                        <input type="number" id="current-score" class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm" placeholder="e.g., 75" min="0">
+                    </div>
+                    <div>
+                        <label for="overs" class="block text-sm font-medium text-gray-300">Overs Completed</label>
+                        <input type="number" id="overs" step="0.1" class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm" placeholder="e.g., 8.4" min="0" max="19.5">
+                    </div>
+                    <div>
+                        <label for="wickets" class="block text-sm font-medium text-gray-300">Wickets Down</label>
+                        <input type="number" id="wickets" class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm" placeholder="e.g., 2" min="0" max="10">
+                    </div>
+                    <div class="md:col-span-2">
+                         <p class="text-sm text-gray-400 mt-2 text-center">Avg. 1st Inn. Score at Venue: <span id="venue-avg" class="font-bold text-emerald-300">N/A</span></p>
+                    </div>
+                </div>
+                <div class="mt-8 text-center">
+                    <button id="predict-btn" class="w-full md:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-8 rounded-lg transition duration-300 text-lg">
+                        Predict Outcome
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Results Section -->
+            <div id="results-container" class="mt-6 space-y-6">
+                <!-- Score Prediction Result -->
+                <div id="score-result" class="bg-gray-800 rounded-lg p-6 shadow-lg text-center hidden">
+                    <h3 class="text-lg font-medium text-gray-300">Projected 1st Innings Score</h3>
+                    <p id="predicted-score-value" class="text-5xl font-bold text-emerald-400 my-2">0</p>
+                </div>
+                
+                 <!-- Win Prediction Result -->
+                <div id="win-result" class="bg-gray-800 rounded-lg p-6 shadow-lg hidden">
+                    <h3 class="text-lg font-medium text-gray-300 mb-4">Win Probability</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span id="win-bat-team-name" class="text-base font-medium text-emerald-400">Batting Team</span>
+                                <span id="win-bat-team-prob" class="text-sm font-medium text-emerald-400">0%</span>
+                            </div>
+                            <div class="w-full bg-gray-700 rounded-full h-4">
+                                <div id="win-bat-team-bar" class="bg-emerald-600 h-4 rounded-full progress-bar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span id="win-bowl-team-name" class="text-base font-medium text-rose-400">Bowling Team</span>
+                                <span id="win-bowl-team-prob" class="text-sm font-medium text-rose-400">0%</span>
+                            </div>
+                            <div class="w-full bg-gray-700 rounded-full h-4">
+                                <div id="win-bowl-team-bar" class="bg-rose-600 h-4 rounded-full progress-bar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Footer -->
+        <footer class="text-center text-gray-500 text-sm mt-10">
+            <p>Project by Rachit Agrawal</p>
+            <p>Model simulation based on T20 analysis. Not a real-time prediction service.</p>
+        </footer>
+
+    </div>
+
+    <script>
+        // Data derived from the notebook
+        const teams = [
+            'Australia', 'Sri Lanka', 'Hong Kong', 'Ireland', 'Zimbabwe',
+            'India', 'Bangladesh', 'New Zealand', 'South Africa', 'England',
+            'West Indies', 'Pakistan', 'Scotland', 'Oman', 'Netherlands',
+            'United Arab Emirates', 'Papua New Guinea', 'ICC World XI',
+            'Thailand', 'Uganda', 'Malaysia', 'Botswana', 'Lesotho', 'Malawi',
+            'Namibia', 'Sierra Leone', 'Mozambique', 'Nepal', 'China',
+            'Kuwait', 'Philippines', 'Vanuatu', 'United States of America',
+            'Germany', 'Italy', 'Nigeria', 'Tanzania', 'Rwanda', 'Kenya',
+            'Japan', 'Indonesia', 'Fiji', 'Samoa', 'Canada', 'Ghana',
+            'Guernsey', 'Denmark', 'Norway', 'Jersey', 'Maldives', 'Mali',
+            'Singapore', 'Qatar', 'South Korea', 'Bermuda', 'Cayman Islands',
+            'Portugal', 'Spain', 'Gibraltar', 'Bhutan', 'Saudi Arabia',
+            'Bahrain', 'Iran', 'Austria', 'Belgium', 'Luxembourg',
+            'Czech Republic', 'Isle of Man', 'Bulgaria', 'Romania', 'Greece',
+            'Serbia', 'Malta', 'France', 'Sweden', 'Finland', 'Eswatini',
+            'Cameroon', 'Hungary', 'Estonia', 'Cyprus', 'Switzerland',
+            'Argentina', 'Brazil', 'Seychelles', 'Swaziland', 'Belize',
+            'Bahamas', 'Panama', 'Barbados', 'Israel', 'Turkey', 'Croatia',
+            'Slovenia', 'Cook Islands', 'St Helena', 'Gambia', 'Cambodia',
+            'Myanmar', 'Mongolia', 'Chile', 'Mexico', 'Costa Rica',
+            'Ivory Coast', 'Suriname', 'Turks and Caicos Island'
+        ];
+        const venues = [
+            "Melbourne Cricket Ground", "Simonds Stadium, South Geelong",
+            "Adelaide Oval", "Bready Cricket Club, Magheramason",
+            "Harare Sports Club", "McLean Park", "Bay Oval", "Eden Park",
+            "The Rose Bowl", "County Ground", "Sophia Gardens",
+            "Riverside Ground", "Green Park",
+            "Vidarbha Cricket Association Stadium, Jamtha",
+            "M Chinnaswamy Stadium",
+            "Central Broward Regional Park Stadium Turf Ground",
+            "Sinhalese Sports Club Ground",
+            "Dubai International Cricket Stadium", "Sheikh Zayed Stadium",
+            "Saxton Oval", "Asian Institute of Technology Ground",
+            "Sydney Cricket Ground", "Bellerive Oval", "Westpac Stadium",
+            "Seddon Park", "Mangaung Oval", "Senwes Park",
+            "Kensington Oval, Bridgetown", "Queen's Park Oval, Port of Spain",
+            "R Premadasa Stadium", "North Sydney Oval", "Manuka Oval",
+            "Sabina Park, Kingston", "R.Premadasa Stadium, Khettarama",
+            "Gaddafi Stadium", "JSCA International Stadium Complex",
+            "Barsapara Cricket Stadium", "Edgbaston", "Old Trafford",
+            "Arun Jaitley Stadium", "Saurashtra Cricket Association Stadium",
+            "Greenfield International Stadium", "The Wanderers Stadium",
+            "SuperSport Park", "Newlands", "Barabati Stadium",
+            "Holkar Cricket Stadium", "Wankhede Stadium",
+            "Coolidge Cricket Ground", "Sharjah Cricket Stadium",
+            "Buffalo Park", "The Cooper Associates County Ground",
+            "Grange Cricket Club, Raeburn Place",
+            "Shere Bangla National Stadium, Mirpur",
+            "Sylhet International Cricket Stadium", "Brabourne Stadium",
+            "Pukekura Park", "Nondescripts Cricket Club Ground",
+            "National Stadium", "The Village, Malahide", "Lord's",
+            "Hazelaarweg", "Sportpark Het Schootsveld", "VRA Ground",
+            "Allan Border Field", "Carrara Oval",
+            "Brisbane Cricket Ground, Woolloongabba", "YMCA Cricket Club",
+            "The Village, Malahide, Dublin",
+            "Pembroke Cricket Club, Sandymount", "Warner Park, Basseterre",
+            "Sportpark Maarschalkerweerd", "Kinrara Academy Oval",
+            "Royal Selangor Club", "Providence Stadium",
+            "Daren Sammy National Cricket Stadium, Gros Islet",
+            "Sir Vivian Richards Stadium, North Sound",
+            "Brian Lara Stadium, Tarouba", "Colts Cricket Club Ground",
+            "Colombo Cricket Club Ground",
+            "Chilaw Marians Cricket Club Ground", "Eden Gardens",
+            "Bharat Ratna Shri Atal Bihari Vajpayee Ekana Cricket Stadium",
+            "MA Chidambaram Stadium, Chepauk",
+            "Darren Sammy National Cricket Stadium, St Lucia",
+            "Warner Park, St Kitts", "Botswana Cricket Association Oval 1",
+            "Botswana Cricket Association Oval 2",
+            "Botswana Cricket Association Oval 1, Gaborone", "Tolerance Oval",
+            "County Ground, Hove",
+            "Dr. Y.S. Rajasekhara Reddy ACA-VDCA Cricket Stadium",
+            "M.Chinnaswamy Stadium", "Bready", "ICC Academy",
+            "Southend Club Cricket Stadium",
+            "Al Amerat Cricket Ground Oman Cricket (Ministry Turf 1)",
+            "Terdthai Cricket Ground", "Sydney Showground Stadium",
+            "W.A.C.A. Ground", "Junction Oval", "P Sara Oval", "Amini Park",
+            "LC de Villiers Oval", "City Oval", "Willowmoore Park",
+            "United Cricket Club Ground", "Old Hararians",
+            "Takashinga Sports Club", "Ground 1, Independence Park",
+            "Ground 2, Independence Park", "Perth Stadium",
+            "Kyambogo Cricket Oval", "Lugogo Cricket Oval", "Sydney Parade",
+            "King George V Sports Ground", "College Field", "Kingsmead",
+            "St George's Park",
+            "Punjab Cricket Association IS Bindra Stadium, Mohali",
+            "Rajiv Gandhi International Stadium, Uppal", "Hagley Oval",
+            "Basin Reserve", "Providence Stadium, Guyana",
+            "Gahanga International Cricket Stadium. Rwanda",
+            "La Manga Club Top Ground", "Indian Association Ground",
+            "Sportpark Westvliet", "Pallekele International Cricket Stadium",
+            "Forthill", "Lochlands", "Zahur Ahmed Chowdhury Stadium",
+            "Yeonhui Cricket Ground", "White Hill Field, Sandys Parish",
+            "Bermuda National Stadium", "Kensington Oval, Barbados",
+            "Lalabhai Contractor Stadium", "ICC Academy Ground No 2",
+            "La Manga Club Bottom Ground",
+            "Maharashtra Cricket Association Stadium",
+            "National Cricket Stadium, Grenada",
+            "Desert Springs Cricket Ground",
+            "Tribhuvan University International Cricket Ground",
+            "Pokhara Rangasala",
+            "Al Amerat Cricket Ground Oman Cricket (Ministry Turf 2)",
+            "Seebarn Cricket Centre, Lower Austria", "Seebarn Cricket Centre",
+            "Pierre Werner Cricket Ground", "Rawalpindi Cricket Stadium",
+            "University Oval", "Sky Stadium", "Moara Vlasiei Cricket Ground",
+            "Boland Park", "Trent Bridge, Nottingham", "Headingley, Leeds",
+            "Old Trafford, Manchester", "Narendra Modi Stadium",
+            "Sophia Gardens, Cardiff", "The Rose Bowl, Southampton",
+            "The Wanderers Stadium, Johannesburg",
+            "SuperSport Park, Centurion",
+            "Civil Service Cricket Club, Stormont, Belfast",
+            "Coolidge Cricket Ground, Antigua",
+            "Kensington Oval, Bridgetown, Barbados", "Wanderers",
+            "Wanderers Cricket Ground, Windhoek",
+            "Tribhuvan University International Cricket Ground, Kirtipur",
+            "County Ground, Northampton", "County Ground, Chelmsford",
+            "The Cooper Associates County Ground, Taunton",
+            "R Premadasa Stadium, Colombo",
+            "National Cricket Stadium, St George's, Grenada",
+            "Daren Sammy National Cricket Stadium, Gros Islet, St Lucia",
+            "Manuka Oval, Canberra", "Scott Page Field, Vinor",
+            "National Sports Academy, Sofia",
+            "Sir Vivian Richards Stadium, North Sound, Antigua",
+            "Marsa Sports Club", "Bayer Uerdingen Cricket Ground",
+            "Castle Avenue, Dublin",
+            "Bready Cricket Club, Magheramason, Bready",
+            "Takashinga Sports Club, Highfield, Harare",
+            "Svanholm Park, Brondby", "Gucherre Cricket Ground",
+            "Kerava National Cricket Ground",
+            "Grange Cricket Club Ground, Raeburn Place, Edinburgh",
+            "Zayed Cricket Stadium, Abu Dhabi", "Entebbe Cricket Oval",
+            "Desert Springs Cricket Ground, Almeria",
+            "Guttsta Wicked Cricket Club",
+            "Botswana Cricket Association Oval 2, Gaborone",
+            "Moara Vlasiei Cricket Ground, Ilfov County",
+            "Edgbaston, Birmingham", "County Ground, Bristol",
+            "Sawai Mansingh Stadium, Jaipur",
+            "JSCA International Stadium Complex, Ranchi",
+            "Eden Gardens, Kolkata",
+            "Bharat Ratna Shri Atal Bihari Vajpayee Ekana Cricket Stadium, Lucknow",
+            "Himachal Pradesh Cricket Association Stadium, Dharamsala",
+            "Arun Jaitley Stadium, Delhi", "Barabati Stadium, Cuttack",
+            "Dr. Y.S. Rajasekhara Reddy ACA-VDCA Cricket Stadium, Visakhapatnam",
+            "Saurashtra Cricket Association Stadium, Rajkot",
+            "M Chinnaswamy Stadium, Bangalore", "Happy Valley Ground",
+            "ICC Academy, Dubai", "Reforma Athletic Club, Naucalpan",
+            "Integrated Polytechnic Regional Centre",
+            "University of Lagos Cricket Oval",
+            "West End Park International Cricket Stadium, Doha",
+            "ICC Academy Ground No 2, Dubai", "National Stadium, Karachi",
+            "Gaddafi Stadium, Lahore", "John Davies Oval, Queenstown",
+            "Central Broward Regional Park Stadium Turf Ground, Lauderhill",
+            "Kinrara Academy Oval, Kuala Lumpur",
+            "GMHBA Stadium, South Geelong, Victoria", "Bellerive Oval, Hobart",
+            "Brisbane Cricket Ground, Woolloongabba, Brisbane",
+            "County Ground, New Road, Worcester", "County Ground, Derby",
+            "Riverside Ground, Chester-le-Street",
+            "United Cricket Club Ground, Windhoek",
+            "College Field, St Peter Port",
+            "Centre for Cricket Development Ground, Windhoek",
+            "Sportpark Westvliet, The Hague", "Queens Sports Club, Bulawayo",
+            "Southend Club Cricket Stadium, Karachi",
+            "Malek Cricket Ground, Ajman",
+            "Pembroke Cricket Club, Sandymount, Dublin",
+            "Windsor Park, Roseau, Dominica",
+            "Brian Lara Stadium, Tarouba, Trinidad",
+            "Warner Park, Basseterre, St Kitts",
+            "Sabina Park, Kingston, Jamaica",
+            "Rangiri Dambulla International Stadium",
+            "UKM-YSD Cricket Oval, Bangi", "Meersen, Gent",
+            "Royal Brussels Cricket Club Ground, Waterloo",
+            "Grainville, St Saviour", "Tikkurila Cricket Ground",
+            "Indian Association Ground, Singapore",
+            "Sportpark Harga, Schiedam", "Sportpark Westvliet, Voorburg",
+            "Bulawayo Athletic Club", "Bay Oval, Mount Maunganui",
+            "McLean Park, Napier", "Hagley Oval, Christchurch",
+            "Eden Park, Auckland", "University Oval, Dunedin",
+            "Lisicji Jarak Cricket Ground",
+            "Punjab Cricket Association IS Bindra Stadium, Mohali, Chandigarh",
+            "Vidarbha Cricket Association Stadium, Jamtha, Nagpur",
+            "Rajiv Gandhi International Stadium, Uppal, Hyderabad",
+            "Greenfield International Stadium, Thiruvananthapuram",
+            "Barsapara Cricket Stadium, Guwahati",
+            "Holkar Cricket Stadium, Indore", "Gymkhana Club Ground, Nairobi",
+            "Sheikh Zayed Stadium, Abu Dhabi", "Tolerance Oval, Abu Dhabi",
+            "Willowmoore Park, Benoni", "Independence Park, Port Vila",
+            "Sano International Cricket Ground",
+            "Sylhet International Cricket Stadium, Academy Ground",
+            "Kennington Oval, London", "Lord's, London",
+            "Kaizuka Cricket Ground", "Newlands, Cape Town",
+            "Boland Park, Paarl", "St George's Park, Gqeberha",
+            "Royal Chiangmai Golf Club", "Buffalo Park, East London",
+            "North Sydney Oval, Sydney", "Dr DY Patil Sports Academy, Mumbai",
+            "Brabourne Stadium, Mumbai", "Wankhede Stadium, Mumbai",
+            "Maharashtra Cricket Association Stadium, Pune",
+            "Narendra Modi Stadium, Ahmedabad",
+            "Gahanga International Cricket Stadium, Rwanda",
+            "Zahur Ahmed Chowdhury Stadium, Chattogram",
+            "Morodok Techo National Stadium", "St Albans Club, Buenos Aires",
+            "Belgrano Athletic Club Ground, Buenos Aires",
+            "Hurlingham Club Ground, Buenos Aires",
+            "Mission Road Ground, Mong Kok, Hong Kong",
+            "Tafawa Balewa Square (TBS) Cricket Oval",
+            "Terdthai Cricket Ground, Bangkok", "Santarem Cricket Ground",
+            "Europa Sports Complex", "Solvangs Park, Glostrup",
+            "Sinhalese Sports Club Ground, Colombo", "Kingsmead, Durban",
+            "Allan Border Field, Brisbane", "YSD-UKM Cricket Oval, Bangi",
+            "Grainville, St Saviour, Jersey", "FB Fields, St Clement",
+            "VRA Ground, Amstelveen", "P Sara Oval, Colombo",
+            "Sportpark Het Schootsveld, Deventer", "Goldenacre, Edinburgh",
+            "Amini Park, Port Moresby", "Bayuemas Oval, Kuala Lumpur",
+            "Sportpark Maarschalkerweerd, Utrecht", "Malahide, Dublin",
+            "Saxton Oval, Nelson", "Basin Reserve, Wellington",
+            "Seddon Park, Hamilton", "Sky Stadium, Wellington",
+            "Shaheed Veer Narayan Singh International Stadium, Raipur",
+            "M Chinnaswamy Stadium, Bengaluru", "GB Oval, Szodliget",
+            "Turf City B Cricket Ground", "Vanuatu Cricket Ground",
+            "Selangor Turf Club, Kuala Lumpur",
+            "Vanuatu Cricket Ground (Oval 2)",
+            "Woodley Cricket Field, Los Angeles", "Diamond Oval, Kimberley",
+            "Senwes Park, Potchefstroom", "St Lawrence Ground, Canterbury",
+            "Zhejiang University of Technology Cricket Field",
+            "National Stadium, Hamilton",
+            "Tafawa Balewa Square Cricket Oval, Lagos", "San Albano",
+            "Mulpani Cricket Ground", "St Georges Quilmes",
+            "Udayana Cricket Ground", "Hong Kong Cricket Club",
+            "Grand Prairie Stadium, Dallas",
+            "Nassau County International Cricket Stadium, New York",
+            "Arnos Vale Ground, Kingstown, St Vincent",
+            "Johor Cricket Academy Oval", "Royal Selangor Club, Kuala Lumpur",
+            "University of Doha for Science and Technology",
+            "Achimota Senior Secondary School A Field, Accra",
+            "Achimota Senior Secondary School B Field, Accra",
+            "Prairie View Cricket Complex", "Great Barrier Reef Arena, Mackay",
+            "Los Reyes Polo Club", "7he Sevens Stadium, Dubai",
+            "Dreux Sport Cricket Club",
+            "MA Chidambaram Stadium, Chepauk, Chennai",
+            "Gahanga B Ground, Rwanda", "Roma Cricket Ground",
+            "Simar Cricket Ground, Rome",
+            "Mahinda Rajapaksa International Cricket Stadium, Sooriyawewa, Hambantota",
+            "Shrimant Madhavrao Scindia Cricket Stadium, Gwalior",
+            "King George V Sports Ground, Castel",
+            "Guernsey Rovers Athletic Club Ground, Port Soif",
+            "Sikh Union Club Ground, Nairobi",
+            "Mladost Cricket Ground, Zagreb", "Faleata Oval No 2, Apia",
+            "Ekeberg Cricket Ground 1, Oslo", "Ekeberg Cricket Ground 2, Oslo",
+            "Multan Cricket Stadium", "Koge Cricket Club",
+            "Koge Cricket Club 2", "Gymkhana Club Ground, Dar-es-Salaam",
+            "University of Dar-es-Salaam Ground",
+            "Yeonhui Cricket Ground, Incheon",
+            "Maple Leaf North-West Ground, King City", "Marina Ground, Corfu",
+            "Sao Fernando Polo and Cricket Club",
+            "Gelephu International Cricket Ground",
+            "Ruaraka Sports Club Ground, Nairobi", "TCA Oval, Blantyre",
+            "Singapore National Cricket Ground", "Jinja Cricket Ground",
+            "Sylhet Stadium", "Nigeria Cricket Federation Oval 1, Abuja",
+            "Nigeria Cricket Federation Oval 2, Abuja", "Las Caballerizas",
+            "Dr DY Patil Sports Academy, Navi Mumbai",
+            "St George's College Ground, Buenos Aires",
+            "Three Ws Oval, Cave Hill, Barbados",
+            "N'Du Stadium, Noumea, New Caledonia",
+            "Namibia Cricket Ground, Windhoek",
+            "Clontarf Cricket Club Ground, Dublin",
+            "Estonian National Cricket and Rugby Field",
+            "Marrara Stadium, Darwin", "Cazaly's Stadium, Cairns",
+            "High Performance Oval, Windhoek", "Clayton Panama, Panama City",
+            "Jimmy Powell Oval, Cayman Islands",
+            "Asian Institute of Technology Ground, Bangkok",
+            "Velden Cricket Ground, Latschach", "Stars Arena Hofstade, Zemst",
+            "Titwood, Glasgow", "Ballpark Ground, Graz",
+            "Ishoj Cricket Club, Vejledalen",
+            "Sano International Cricket Ground 2",
+            "Maple Leaf North-East Ground, King City",
+            "Vassil Levski National Sports Academy, Sofia",
+            "Botkyrka Cricket Center, Stockholm",
+            "Stubberudmyra Cricket Ground, Oslo", "Hazelaarweg, Rotterdam",
+            "Albertslund Cricket Club", "Albert Park 1, Suva",
+            "Albert Park 2, Suva", "New Farnley CC, Leeds",
+            "Malkerns Country Club oval", "New Wanderers Stadium",
+            "Kennington Oval", "Western Australia Cricket Association Ground",
+            "Jade Stadium", "Gymkhana Club Ground",
+            "Civil Service Cricket Club, Stormont", "Trent Bridge",
+            "Maple Leaf North-West Ground", "AMI Stadium",
+            "Beausejour Stadium, Gros Islet", "Boland Bank Park",
+            "Punjab Cricket Association Stadium, Mohali", "OUTsurance Oval",
+            "De Beers Diamond Oval", "Moses Mabhida Stadium",
+            "Stadium Australia", "Shere Bangla National Stadium",
+            "Mahinda Rajapaksa International Cricket Stadium, Sooriyawewa",
+            "Galle International Stadium", "St Lawrence Ground",
+            "Mombasa Sports Club Ground", "Arundel Castle Cricket Club Ground",
+            "Subrata Roy Sahara Stadium", "Haslegrave Ground",
+            "Guanggong International Cricket Stadium",
+            "Sardar Patel Stadium, Motera", "ICC Global Cricket Academy",
+            "Wanderers Cricket Ground", "Queens Sports Club",
+            "Arnos Vale Ground, Kingstown",
+            "West End Park International Cricket Stadium",
+            "Windsor Park, Roseau", "Kerrydale Oval",
+            "Mercantile Cricket Association Ground",
+            "Grange Cricket Club Ground, Raeburn Place",
+            "National Cricket Stadium, St George's",
+            "Himachal Pradesh Cricket Association Stadium"
+        ];
+        
+        const venueAvgScores = {
+            "7he Sevens Stadium, Dubai": 79.0, "AMI Stadium": 186.33, "Achimota Senior Secondary School A Field, Accra": 121.75,
+            "Achimota Senior Secondary School B Field, Accra": 119.11, "Adelaide Oval": 159.88, "Al Amerat Cricket Ground Oman Cricket (Ministry Turf 1)": 148.41,
+            "Al Amerat Cricket Ground Oman Cricket (Ministry Turf 2)": 148.59, "Albert Park 1, Suva": 140.92, "Albert Park 2, Suva": 114.0,
+            "Albertslund Cricket Club": 121.0, "Allan Border Field": 133.5, "Allan Border Field, Brisbane": 168.0, "Amini Park": 133.83,
+            "Amini Park, Port Moresby": 118.12, "Arnos Vale Ground, Kingstown": 143.5, "Arnos Vale Ground, Kingstown, St Vincent": 140.83,
+            "Arun Jaitley Stadium": 175.0, "Arun Jaitley Stadium, Delhi": 216.0, "Arundel Castle Cricket Club Ground": 139.0,
+            "Asian Institute of Technology Ground": 95.58, "Asian Institute of Technology Ground, Bangkok": 29.5, "Ballpark Ground, Graz": 167.5,
+            "Barabati Stadium": 136.0, "Barabati Stadium, Cuttack": 148.0, "Barsapara Cricket Stadium": 148.5, "Barsapara Cricket Stadium, Guwahati": 186.0,
+            "Basin Reserve": 146.0, "Basin Reserve, Wellington": 162.0, "Bayer Uerdingen Cricket Ground": 105.79, "Bay Oval": 147.25,
+            "Bay Oval, Mount Maunganui": 169.17, "Bayuemas Oval, Kuala Lumpur": 127.35, "Beausejour Stadium, Gros Islet": 148.5,
+            "Belgrano Athletic Club Ground, Buenos Aires": 111.33, "Bellerive Oval": 150.94, "Bellerive Oval, Hobart": 156.0,
+            "Bermuda National Stadium": 116.33, "Bharat Ratna Shri Atal Bihari Vajpayee Ekana Cricket Stadium": 153.5,
+            "Bharat Ratna Shri Atal Bihari Vajpayee Ekana Cricket Stadium, Lucknow": 152.0, "Boland Bank Park": 144.0, "Boland Park": 136.14,
+            "Boland Park, Paarl": 156.0, "Botswana Cricket Association Oval 1": 126.75, "Botswana Cricket Association Oval 1, Gaborone": 130.4,
+            "Botswana Cricket Association Oval 2": 115.75, "Botswana Cricket Association Oval 2, Gaborone": 120.33,
+            "Botkyrka Cricket Center, Stockholm": 108.0, "Brabourne Stadium": 184.67, "Brabourne Stadium, Mumbai": 183.0, "Bready": 101.5,
+            "Bready Cricket Club, Magheramason": 121.14, "Bready Cricket Club, Magheramason, Bready": 118.0, "Brian Lara Stadium, Tarouba": 148.0,
+            "Brian Lara Stadium, Tarouba, Trinidad": 148.75, "Brisbane Cricket Ground, Woolloongabba": 156.2, "Brisbane Cricket Ground, Woolloongabba, Brisbane": 166.0,
+            "Buffalo Park": 141.0, "Buffalo Park, East London": 160.0, "Bulawayo Athletic Club": 143.25, "Cazaly's Stadium, Cairns": 135.0,
+            "Central Broward Regional Park Stadium Turf Ground": 151.71, "Central Broward Regional Park Stadium Turf Ground, Lauderhill": 164.25,
+            "Centre for Cricket Development Ground, Windhoek": 122.33, "Chilaw Marians Cricket Club Ground": 105.0, "City Oval": 113.67,
+            "Civil Service Cricket Club, Stormont": 142.0, "Civil Service Cricket Club, Stormont, Belfast": 159.25, "Clayton Panama, Panama City": 101.0,
+            "Clontarf Cricket Club Ground, Dublin": 146.5, "College Field": 111.0, "College Field, St Peter Port": 122.5, "Colombo Cricket Club Ground": 133.0,
+            "Colts Cricket Club Ground": 125.0, "Coolidge Cricket Ground": 132.5, "Coolidge Cricket Ground, Antigua": 138.0, "County Ground": 161.88,
+            "County Ground, Bristol": 162.25, "County Ground, Chelmsford": 180.0, "County Ground, Derby": 164.0, "County Ground, Hove": 152.5,
+            "County Ground, New Road, Worcester": 178.0, "County Ground, Northampton": 178.0, "Daren Sammy National Cricket Stadium, Gros Islet": 147.2,
+            "Daren Sammy National Cricket Stadium, Gros Islet, St Lucia": 159.0, "Darren Sammy National Cricket Stadium, St Lucia": 155.25,
+            "De Beers Diamond Oval": 138.5, "Desert Springs Cricket Ground": 127.36, "Desert Springs Cricket Ground, Almeria": 119.25,
+            "Diamond Oval, Kimberley": 156.0, "Dr DY Patil Sports Academy, Mumbai": 164.0, "Dr DY Patil Sports Academy, Navi Mumbai": 170.0,
+            "Dr. Y.S. Rajasekhara Reddy ACA-VDCA Cricket Stadium": 131.0, "Dr. Y.S. Rajasekhara Reddy ACA-VDCA Cricket Stadium, Visakhapatnam": 129.0,
+            "Dreux Sport Cricket Club": 92.5, "Dubai International Cricket Stadium": 153.25, "Eden Gardens": 154.5, "Eden Gardens, Kolkata": 172.0,
+            "Eden Park": 165.71, "Eden Park, Auckland": 175.5, "Edgbaston": 159.4, "Edgbaston, Birmingham": 161.0, "Ekeberg Cricket Ground 1, Oslo": 138.5,
+            "Ekeberg Cricket Ground 2, Oslo": 132.0, "Entebbe Cricket Oval": 114.33, "Estonian National Cricket and Rugby Field": 169.0, "Europa Sports Complex": 137.67,
+            "FB Fields, St Clement": 144.33, "Faleata Oval No 2, Apia": 130.5, "Forthill": 114.2, "GB Oval, Szodliget": 123.67,
+            "GMHBA Stadium, South Geelong, Victoria": 150.0, "Gaddafi Stadium": 159.95, "Gaddafi Stadium, Lahore": 161.5, "Gahanga B Ground, Rwanda": 112.5,
+            "Gahanga International Cricket Stadium, Rwanda": 118.06, "Gahanga International Cricket Stadium. Rwanda": 124.0,
+            "Galle International Stadium": 124.0, "Gelephu International Cricket Ground": 117.0, "Grange Cricket Club, Raeburn Place": 154.71,
+            "Grange Cricket Club Ground, Raeburn Place": 161.0, "Grange Cricket Club Ground, Raeburn Place, Edinburgh": 154.0,
+            "Grand Prairie Stadium, Dallas": 140.0, "Green Park": 145.5, "Greenfield International Stadium": 105.0,
+            "Greenfield International Stadium, Thiruvananthapuram": 115.0, "Ground 1, Independence Park": 122.17, "Ground 2, Independence Park": 113.83,
+            "Guanggong International Cricket Stadium": 99.0, "Gucherre Cricket Ground": 106.33, "Guernsey Rovers Athletic Club Ground, Port Soif": 131.5,
+            "Guttsta Wicked Cricket Club": 139.0, "Gymkhana Club Ground": 121.0, "Gymkhana Club Ground, Dar-es-Salaam": 135.0,
+            "Gymkhana Club Ground, Nairobi": 140.0, "Hagley Oval": 161.67, "Hagley Oval, Christchurch": 163.5, "Happy Valley Ground": 125.5, "Harare Sports Club": 145.71,
+            "Haslegrave Ground": 148.0, "Hazelaarweg": 130.67, "Hazelaarweg, Rotterdam": 150.0, "Headingley, Leeds": 182.0,
+            "High Performance Oval, Windhoek": 129.5, "Himachal Pradesh Cricket Association Stadium": 169.5,
+            "Himachal Pradesh Cricket Association Stadium, Dharamsala": 180.0, "Holkar Cricket Stadium": 196.33, "Holkar Cricket Stadium, Indore": 210.0,
+            "Hong Kong Cricket Club": 108.0, "Hurlingham Club Ground, Buenos Aires": 112.33, "ICC Academy": 151.7, "ICC Academy, Dubai": 159.75,
+            "ICC Academy Ground No 2": 149.0, "ICC Academy Ground No 2, Dubai": 156.88, "ICC Global Cricket Academy": 143.0,
+            "Indian Association Ground": 132.89, "Indian Association Ground, Singapore": 136.0, "Independence Park, Port Vila": 118.5,
+            "Integrated Polytechnic Regional Centre": 113.91, "Ishoj Cricket Club, Vejledalen": 141.0, "Jade Stadium": 164.0,
+            "Jimmy Powell Oval, Cayman Islands": 89.0, "Jinja Cricket Ground": 117.67, "Johor Cricket Academy Oval": 105.0, "John Davies Oval, Queenstown": 178.0,
+            "JSCA International Stadium Complex": 151.0, "JSCA International Stadium Complex, Ranchi": 155.0, "Junction Oval": 142.5,
+            "Kaizuka Cricket Ground": 95.0, "Kensington Oval, Barbados": 153.0, "Kensington Oval, Bridgetown": 151.78,
+            "Kensington Oval, Bridgetown, Barbados": 156.0, "Kennington Oval": 155.5, "Kennington Oval, London": 161.0,
+            "Kerava National Cricket Ground": 140.45, "Kerrydale Oval": 91.0, "King George V Sports Ground": 113.67,
+            "King George V Sports Ground, Castel": 127.0, "Kingsmead": 152.0, "Kingsmead, Durban": 148.0, "Kinrara Academy Oval": 126.33,
+            "Kinrara Academy Oval, Kuala Lumpur": 128.0, "Koge Cricket Club": 132.0, "Koge Cricket Club 2": 114.0, "Kyambogo Cricket Oval": 131.75,
+            "LC de Villiers Oval": 144.5, "La Manga Club Bottom Ground": 117.43, "La Manga Club Top Ground": 128.17, "Lalabhai Contractor Stadium": 135.0,
+            "Las Caballerizas": 101.5, "Lisicji Jarak Cricket Ground": 110.0, "Lochlands": 126.33, "Lord's": 159.0, "Lord's, London": 172.0,
+            "Los Reyes Polo Club": 98.5, "Lugogo Cricket Oval": 122.25, "M Chinnaswamy Stadium": 160.03, "M Chinnaswamy Stadium, Bangalore": 162.0,
+            "M.Chinnaswamy Stadium": 145.2, "MA Chidambaram Stadium, Chepauk": 159.8, "MA Chidambaram Stadium, Chepauk, Chennai": 164.0,
+            "Maharashtra Cricket Association Stadium": 172.0, "Maharashtra Cricket Association Stadium, Pune": 174.0,
+            "Mahinda Rajapaksa International Cricket Stadium, Sooriyawewa": 148.0, "Mahinda Rajapaksa International Cricket Stadium, Sooriyawewa, Hambantota": 136.0,
+            "Malahide, Dublin": 151.0, "Malek Cricket Ground, Ajman": 121.0, "Malkerns Country Club oval": 124.0, "Mangaung Oval": 139.5,
+            "Manuka Oval": 150.0, "Manuka Oval, Canberra": 156.0, "Maple Leaf North-East Ground, King City": 133.0, "Maple Leaf North-West Ground": 137.25,
+            "Maple Leaf North-West Ground, King City": 138.0, "Marina Ground, Corfu": 112.5, "Marrara Stadium, Darwin": 128.0, "Marsa Sports Club": 137.45,
+            "McLean Park": 162.0, "McLean Park, Napier": 170.0, "Meersen, Gent": 109.5, "Melbourne Cricket Ground": 140.04,
+            "Mercantile Cricket Association Ground": 127.0, "Mission Road Ground, Mong Kok, Hong Kong": 115.0,
+            "Mladost Cricket Ground, Zagreb": 129.5, "Moara Vlasiei Cricket Ground": 162.43, "Moara Vlasiei Cricket Ground, Ilfov County": 152.0,
+            "Mombasa Sports Club Ground": 122.0, "Morodok Techo National Stadium": 89.67, "Moses Mabhida Stadium": 139.0,
+            "Mulpani Cricket Ground": 147.25, "Multan Cricket Stadium": 166.0, "N'Du Stadium, Noumea, New Caledonia": 91.0,
+            "Namibia Cricket Ground, Windhoek": 125.0, "Narendra Modi Stadium": 160.0, "Narendra Modi Stadium, Ahmedabad": 160.0,
+            "Nassau County International Cricket Stadium, New York": 108.0, "National Cricket Stadium, Grenada": 153.0,
+            "National Cricket Stadium, St George's": 172.0, "National Cricket Stadium, St George's, Grenada": 196.0,
+            "National Sports Academy, Sofia": 157.67, "National Stadium": 146.47, "National Stadium, Hamilton": 99.0,
+            "National Stadium, Karachi": 170.43, "New Farnley CC, Leeds": 133.0, "New Wanderers Stadium": 160.5, "Newlands": 149.39,
+            "Newlands, Cape Town": 151.0, "Nigeria Cricket Federation Oval 1, Abuja": 109.0, "Nigeria Cricket Federation Oval 2, Abuja": 97.5,
+            "Nondescripts Cricket Club Ground": 130.0, "North Sydney Oval": 161.0, "North Sydney Oval, Sydney": 161.0, "Old Hararians": 142.33,
+            "Old Trafford": 158.6, "Old Trafford, Manchester": 163.0, "OUTsurance Oval": 170.5, "P Sara Oval": 131.5,
+            "P Sara Oval, Colombo": 134.0, "Pallekele International Cricket Stadium": 153.81, "Pembroke Cricket Club, Sandymount": 144.5,
+            "Pembroke Cricket Club, Sandymount, Dublin": 148.0, "Perth Stadium": 136.14, "Pierre Werner Cricket Ground": 128.8,
+            "Pokhara Rangasala": 124.25, "Prairie View Cricket Complex": 136.0, "Providence Stadium": 139.0, "Providence Stadium, Guyana": 147.0,
+            "Pukekura Park": 174.5, "Punjab Cricket Association IS Bindra Stadium, Mohali": 176.67,
+            "Punjab Cricket Association IS Bindra Stadium, Mohali, Chandigarh": 183.0, "Punjab Cricket Association Stadium, Mohali": 162.0,
+            "Queen's Park Oval, Port of Spain": 145.14, "Queens Sports Club": 145.8, "Queens Sports Club, Bulawayo": 145.0,
+            "R Premadasa Stadium": 145.42, "R Premadasa Stadium, Colombo": 147.0, "R.Premadasa Stadium, Khettarama": 146.0,
+            "Rajiv Gandhi International Stadium, Uppal": 158.5, "Rajiv Gandhi International Stadium, Uppal, Hyderabad": 158.0,
+            "Rangiri Dambulla International Stadium": 153.0, "Rawalpindi Cricket Stadium": 170.0, "Reforma Athletic Club, Naucalpan": 112.5,
+            "Riverside Ground": 139.0, "Riverside Ground, Chester-le-Street": 146.0, "Roma Cricket Ground": 148.8,
+            "Royal Brussels Cricket Club Ground, Waterloo": 135.0, "Royal Chiangmai Golf Club": 109.0, "Royal Selangor Club": 122.5,
+            "Royal Selangor Club, Kuala Lumpur": 122.0, "Ruaraka Sports Club Ground, Nairobi": 146.0, "Sabina Park, Kingston": 154.0,
+            "Sabina Park, Kingston, Jamaica": 159.0, "San Albano": 103.0, "Sano International Cricket Ground": 113.0,
+            "Sano International Cricket Ground 2": 106.0, "Santarem Cricket Ground": 108.33, "Sao Fernando Polo and Cricket Club": 102.5,
+            "Sardar Patel Stadium, Motera": 154.5, "Saurashtra Cricket Association Stadium": 172.33, "Saurashtra Cricket Association Stadium, Rajkot": 178.0,
+            "Sawai Mansingh Stadium, Jaipur": 158.0, "Saxton Oval": 156.5, "Saxton Oval, Nelson": 168.0, "Scott Page Field, Vinor": 138.33,
+            "Seebarn Cricket Centre": 146.13, "Seebarn Cricket Centre, Lower Austria": 157.0, "Seddon Park": 164.29, "Seddon Park, Hamilton": 168.0,
+            "Selangor Turf Club, Kuala Lumpur": 124.0, "Senwes Park": 140.0, "Senwes Park, Potchefstroom": 157.0,
+            "Shaheed Veer Narayan Singh International Stadium, Raipur": 146.0, "Sharjah Cricket Stadium": 150.23, "Sheikh Zayed Stadium": 143.11,
+            "Sheikh Zayed Stadium, Abu Dhabi": 141.0, "Shere Bangla National Stadium": 140.71, "Shere Bangla National Stadium, Mirpur": 144.92,
+            "Shrimant Madhavrao Scindia Cricket Stadium, Gwalior": 184.0, "Sikh Union Club Ground, Nairobi": 135.0, "Simar Cricket Ground, Rome": 135.5,
+            "Simonds Stadium, South Geelong": 149.0, "Singapore National Cricket Ground": 123.0, "Sinhalese Sports Club Ground": 135.75,
+            "Sinhalese Sports Club Ground, Colombo": 136.0, "Sir Vivian Richards Stadium, North Sound": 133.4,
+            "Sir Vivian Richards Stadium, North Sound, Antigua": 130.0, "Sky Stadium": 156.0, "Sky Stadium, Wellington": 160.0,
+            "Solvangs Park, Glostrup": 132.33, "Sophia Gardens": 148.0, "Sophia Gardens, Cardiff": 152.0, "Southend Club Cricket Stadium": 130.0,
+            "Southend Club Cricket Stadium, Karachi": 135.0, "Sportpark Harga, Schiedam": 126.0, "Sportpark Het Schootsveld": 126.33,
+            "Sportpark Het Schootsveld, Deventer": 130.0, "Sportpark Maarschalkerweerd": 128.25, "Sportpark Maarschalkerweerd, Utrecht": 137.0,
+            "Sportpark Westvliet": 124.64, "Sportpark Westvliet, The Hague": 138.0, "Sportpark Westvliet, Voorburg": 129.0,
+            "St Albans Club, Buenos Aires": 96.67, "St George's College Ground, Buenos Aires": 115.0, "St George's Park": 146.0,
+            "St George's Park, Gqeberha": 149.0, "St Georges Quilmes": 111.0, "St Helena": 92.0, "St Lawrence Ground": 182.0,
+            "St Lawrence Ground, Canterbury": 182.0, "Stadium Australia": 151.0, "Stars Arena Hofstade, Zemst": 134.0,
+            "Stubberudmyra Cricket Ground, Oslo": 132.5, "Subrata Roy Sahara Stadium": 139.0, "SuperSport Park": 164.88,
+            "SuperSport Park, Centurion": 169.0, "Svanholm Park, Brondby": 130.2, "Sydney Cricket Ground": 161.4, "Sydney Parade": 118.5,
+            "Sydney Showground Stadium": 141.5, "Sylhet International Cricket Stadium": 148.4,
+            "Sylhet International Cricket Stadium, Academy Ground": 112.0, "Sylhet Stadium": 105.0, "TCA Oval, Blantyre": 102.0,
+            "Tafawa Balewa Square (TBS) Cricket Oval": 112.5, "Tafawa Balewa Square Cricket Oval, Lagos": 119.0,
+            "Takashinga Sports Club": 135.83, "Takashinga Sports Club, Highfield, Harare": 139.0, "Terdthai Cricket Ground": 114.63,
+            "Terdthai Cricket Ground, Bangkok": 119.0, "The Cooper Associates County Ground": 169.0,
+            "The Cooper Associates County Ground, Taunton": 178.0, "The Rose Bowl": 157.0,
+            "The Rose Bowl, Southampton": 165.0, "The Village, Malahide": 149.43, "The Village, Malahide, Dublin": 153.0,
+            "The Wanderers Stadium": 167.33, "The Wanderers Stadium, Johannesburg": 171.0, "Three Ws Oval, Cave Hill, Barbados": 135.0,
+            "Tikkurila Cricket Ground": 122.5, "Titwood, Glasgow": 135.0, "Tolerance Oval": 141.67, "Tolerance Oval, Abu Dhabi": 143.0,
+            "Trent Bridge": 162.18, "Trent Bridge, Nottingham": 164.0, "Tribhuvan University International Cricket Ground": 134.9,
+            "Tribhuvan University International Cricket Ground, Kirtipur": 140.0, "Turf City B Cricket Ground": 121.0,
+            "Turks and Caicos Island": 93.0, "UKM-YSD Cricket Oval, Bangi": 119.5, "Udayana Cricket Ground": 107.5,
+            "United Cricket Club Ground": 124.67, "United Cricket Club Ground, Windhoek": 132.0, "University Oval": 171.0,
+            "University Oval, Dunedin": 178.0, "University of Dar-es-Salaam Ground": 121.0,
+            "University of Doha for Science and Technology": 159.58, "University of Lagos Cricket Oval": 125.5,
+            "VRA Ground": 121.5, "VRA Ground, Amstelveen": 114.0, "Vanuatu Cricket Ground": 99.7,
+            "Vanuatu Cricket Ground (Oval 2)": 81.75, "Vassil Levski National Sports Academy, Sofia": 170.67,
+            "Velden Cricket Ground, Latschach": 171.22, "Vidarbha Cricket Association Stadium, Jamtha": 141.8,
+            "Vidarbha Cricket Association Stadium, Jamtha, Nagpur": 90.0, "W.A.C.A. Ground": 118.4, "Wanderers": 134.0,
+            "Wanderers Cricket Ground": 142.5, "Wanderers Cricket Ground, Windhoek": 140.35, "Wankhede Stadium": 185.43,
+            "Wankhede Stadium, Mumbai": 162.4, "Warner Park, Basseterre": 97.33, "Warner Park, Basseterre, St Kitts": 167.5,
+            "Warner Park, St Kitts": 134.5, "West End Park International Cricket Stadium": 87.0,
+            "West End Park International Cricket Stadium, Doha": 142.14, "Western Australia Cricket Association Ground": 159.5,
+            "Westpac Stadium": 152.94, "White Hill Field, Sandys Parish": 114.0, "Willowmoore Park": 139.75,
+            "Willowmoore Park, Benoni": 148.0, "Windsor Park, Roseau": 138.0, "Windsor Park, Roseau, Dominica": 141.0,
+            "Woodley Cricket Field, Los Angeles": 123.0, "YMCA Cricket Club": 124.5, "YSD-UKM Cricket Oval, Bangi": 116.0,
+            "Yeonhui Cricket Ground": 114.0, "Yeonhui Cricket Ground, Incheon": 117.0, "Zahur Ahmed Chowdhury Stadium": 143.95,
+            "Zahur Ahmed Chowdhury Stadium, Chattogram": 148.0, "Zayed Cricket Stadium, Abu Dhabi": 137.0,
+            "Zhejiang University of Technology Cricket Field": 129.0
+        };
+
+        // --- Populate dropdowns ---
+        function populateDropdowns() {
+            const selects = {
+                'batting-team': teams,
+                'bowling-team': teams,
+                'venue': venues,
+            };
+
+            for (const id in selects) {
+                const selectElement = document.getElementById(id);
+                selects[id].sort().forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item;
+                    option.textContent = item;
+                    selectElement.appendChild(option);
+                });
+            }
+        }
+
+        // --- UI Logic ---
+        function toggleInningsView() {
+            const innings = document.querySelector('input[name="innings-option"]:checked').value;
+            const targetContainer = document.getElementById('target-score-container');
+            const battingTeamLabel = document.querySelector('label[for="batting-team"]');
+
+            if (innings === '2') {
+                targetContainer.classList.remove('hidden');
+                battingTeamLabel.textContent = "Batting Team (Chasing)";
+            } else {
+                targetContainer.classList.add('hidden');
+                battingTeamLabel.textContent = "Batting Team";
+            }
+             // Always hide results on toggle
+            document.getElementById('score-result').classList.add('hidden');
+            document.getElementById('win-result').classList.add('hidden');
+        }
+
+        function updateVenueAverage() {
+            const venueSelect = document.getElementById('venue');
+            const avgDisplay = document.getElementById('venue-avg');
+            const selectedVenue = venueSelect.value;
+            const avgScore = venueAvgScores[selectedVenue];
+            if (avgScore) {
+                avgDisplay.textContent = avgScore.toFixed(2);
+            } else {
+                avgDisplay.textContent = "N/A";
+            }
+        }
+
+        // --- Prediction Logic ---
+        function calculateProjectedScore(currentScore, overs, wickets, venue) {
+            const ballsBowled = Math.floor(overs) * 6 + (overs % 1) * 10;
+            const ballsLeft = 120 - ballsBowled;
+            const wicketsLeft = 10 - wickets;
+            const crr = (ballsBowled > 0) ? (currentScore / (ballsBowled / 6)) : 0;
+            
+            const groundAvg = venueAvgScores[venue] || 165;
+            const inningsCompletion = ballsBowled / 120;
+
+            const projectedRunsAtCurrentRate = (ballsLeft / 6) * (crr + (wicketsLeft * 0.1));
+            const projectedRunsAtAvgRate = (ballsLeft / 6) * (groundAvg / 20);
+            const blendedProjectedRuns = (projectedRunsAtAvgRate * (1 - inningsCompletion)) + (projectedRunsAtCurrentRate * inningsCompletion);
+            
+            let predictedScore = Math.round(currentScore + blendedProjectedRuns);
+            return Math.min(predictedScore, 280); // Cap score
+        }
+
+        function calculateWinProbability(targetScore, currentScore, overs, wickets, venue) {
+            const runsNeeded = targetScore - currentScore;
+            const ballsBowled = Math.floor(overs) * 6 + (overs % 1) * 10;
+            const ballsLeft = 120 - ballsBowled;
+            const wicketsLeft = 10 - wickets;
+            const rrr = ballsLeft > 0 ? (runsNeeded / (ballsLeft / 6)) : 100;
+            const groundAvg = venueAvgScores[venue] || 170;
+
+            let baseProb = 50;
+            let rrrFactor = (9 - rrr) * 5; 
+            let wicketFactor = wicketsLeft * 3.5;
+            let targetPressureFactor = (170 - groundAvg) * 0.25;
+            
+            let winProb = baseProb + rrrFactor + wicketFactor + targetPressureFactor;
+            
+            return Math.max(5, Math.min(95, winProb));
+        }
+
+        function displayWinProbability(batTeam, bowlTeam, winProb) {
+            const bowlProb = 100 - winProb;
+            const winResultDiv = document.getElementById('win-result');
+            
+            document.getElementById('win-bat-team-name').textContent = batTeam;
+            document.getElementById('win-bat-team-prob').textContent = `${winProb.toFixed(0)}%`;
+            document.getElementById('win-bat-team-bar').style.width = `${winProb.toFixed(0)}%`;
+
+            document.getElementById('win-bowl-team-name').textContent = bowlTeam;
+            document.getElementById('win-bowl-team-prob').textContent = `${bowlProb.toFixed(0)}%`;
+            document.getElementById('win-bowl-team-bar').style.width = `${bowlProb.toFixed(0)}%`;
+            
+            winResultDiv.classList.remove('hidden');
+        }
+
+        function displayProjectedScore(score) {
+            const scoreResultDiv = document.getElementById('score-result');
+            document.getElementById('predicted-score-value').textContent = score;
+            scoreResultDiv.classList.remove('hidden');
+        }
+
+        // --- Main Predict Button Event ---
+        document.getElementById('predict-btn').addEventListener('click', () => {
+            const innings = document.querySelector('input[name="innings-option"]:checked').value;
+            const batTeam = document.getElementById('batting-team').value;
+            const bowlTeam = document.getElementById('bowling-team').value;
+            const venue = document.getElementById('venue').value;
+            const currentScore = parseInt(document.getElementById('current-score').value) || 0;
+            const overs = parseFloat(document.getElementById('overs').value) || 0;
+            const wickets = parseInt(document.getElementById('wickets').value);
+
+            // --- Input Validation ---
+            let errorMsg = "";
+            if (isNaN(wickets) || wickets < 0 || wickets > 10) errorMsg += "Wickets must be between 0 and 10.\n";
+            if (overs < 0 || overs >= 20) errorMsg += "Overs must be between 0 and 19.5.\n";
+            if (Math.round((overs % 1) * 10) > 5) errorMsg += "The decimal part of overs represents balls and must be between .1 and .5.\n";
+            if (wickets >= 10) errorMsg += "Prediction not possible, the innings is over.\n";
+            if (batTeam === bowlTeam) errorMsg += "Batting and Bowling teams cannot be the same.\n";
+            
+            if (innings === '1') {
+                if(overs >= 20) errorMsg += "Innings is over, please switch to 2nd Innings prediction.\n";
+            }
+
+            if (innings === '2') {
+                const targetScore = parseInt(document.getElementById('target').value) || 0;
+                if (targetScore <= 0) errorMsg += "Target score must be greater than 0.\n";
+                if (currentScore >= targetScore) errorMsg += "The chasing team has already won.\n";
+            }
+            
+            if (errorMsg) {
+                alert("Invalid input:\n" + errorMsg.trim());
+                return;
+            }
+
+            // --- Prediction Execution ---
+            if (innings === '1') {
+                const projectedScore = calculateProjectedScore(currentScore, overs, wickets, venue);
+                displayProjectedScore(projectedScore);
+
+                // Now use projected score as target for win probability
+                const winProb = calculateWinProbability(projectedScore + 1, 0, 0, 10, venue); // Batting team's chance to defend
+                // In 1st innings, win prob is for the team that batted first
+                displayWinProbability(batTeam, bowlTeam, winProb); 
+            } else { // Innings is '2'
+                const targetScore = parseInt(document.getElementById('target').value);
+                document.getElementById('score-result').classList.add('hidden'); // Hide score projection
+
+                const winProb = calculateWinProbability(targetScore, currentScore, overs, wickets, venue);
+                 // In 2nd innings, win prob is for the chasing team
+                displayWinProbability(batTeam, bowlTeam, winProb);
+            }
+        });
+        
+        // --- Initialize App ---
+        document.addEventListener('DOMContentLoaded', () => {
+            populateDropdowns();
+            document.getElementById('batting-team').value = "India";
+            document.getElementById('bowling-team').value = "Australia";
+            document.getElementById('venue').value = "Wankhede Stadium";
+
+            document.getElementById('venue').addEventListener('change', updateVenueAverage);
+            updateVenueAverage(); // Initial call
+        });
+
+    </script>
+</body>
+</html>
+
